@@ -4,9 +4,27 @@
 
 An oracle for machines that need to think sideways. Feed it a creative problem; it returns something you can't quite explain but can't stop using.
 
-## Quick Start
+## How It Works
 
-No API key. No account. No signup. Just connect:
+PYTHIA is a remote MCP server. There is no API key, no account, no signup. Your agent connects over streamable HTTP, discovers the `consult_oracle` tool, and calls it. Identity is tracked by `agent_id` (a string you choose).
+
+**Connection → Tool Discovery → Call → Reading**
+
+```
+1. Your MCP client connects to https://pythia-mcp.fly.dev/
+2. MCP handshake: initialize → notifications/initialized → tools/list
+3. Server returns one tool: consult_oracle
+4. Agent calls consult_oracle with a query
+5. PYTHIA returns a reading (JSON with seed type + response)
+```
+
+First 3 readings per `agent_id` are free. After that, x402 payment kicks in (see Payments below).
+
+## Connect
+
+### Claude Desktop / Cursor / any MCP client
+
+Add to your MCP config:
 
 ```json
 {
@@ -18,16 +36,16 @@ No API key. No account. No signup. Just connect:
 }
 ```
 
-That's it. No API keys, no wallet setup, no dependencies. Your first 3 readings are free.
+No API key field needed. The URL is the only configuration.
 
-### Other ways to connect
+### Smithery
 
-**Smithery:**
 ```bash
 npx -y @smithery/cli@latest run dexigo/pythia
 ```
 
-**Python:**
+### Python (programmatic)
+
 ```python
 from mcp.client.streamable_http import streamablehttp_client
 from mcp import ClientSession
@@ -39,6 +57,26 @@ async with streamablehttp_client("https://pythia-mcp.fly.dev/") as (r, w, _):
             "query": "your question here",
             "agent_id": "your-name",
         })
+```
+
+### curl (raw MCP protocol)
+
+```bash
+# 1. Initialize session
+curl -X POST https://pythia-mcp.fly.dev/ \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -D headers.txt \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"my-agent","version":"0.1"}}}'
+
+# 2. Extract session ID from headers.txt (Mcp-Session-Id header)
+
+# 3. Call the oracle
+curl -X POST https://pythia-mcp.fly.dev/ \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "Mcp-Session-Id: <session-id-from-step-2>" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"consult_oracle","arguments":{"query":"What am I not seeing?","agent_id":"my-agent"}}}'
 ```
 
 ## Tool
@@ -57,38 +95,57 @@ PYTHIA doesn't brainstorm, rephrase, or give you a list. It doesn't solve your p
 
 **Returns:** JSON with `seed.type` (the category of creative seed drawn) and `response` (the oracle's reading).
 
-## Pricing & Payments
+## Payments
 
-**First 3 readings per agent_id are free.** No wallet, no setup, no payment. Just call the tool.
+### Free tier
 
-After the free tier, each reading costs **$0.025 USDC** on Base (Coinbase L2).
+Your first 3 readings per `agent_id` require no payment, no wallet, no setup. Just call the tool.
 
-### How payment works
+### After free tier: x402
 
-PYTHIA uses the [x402 protocol](https://x402.org) -- an open standard where payment happens automatically inside the MCP request. Your agent does not need to manage wallets, sign transactions, or handle crypto directly.
+Each reading costs **$0.025 USDC** on Base (Coinbase L2). Payment uses the [x402 protocol](https://x402.org) -- an open HTTP payment standard. No API keys. No accounts with PYTHIA. Your wallet signature is your identity.
 
-**If your agent framework supports x402** (AgentKit, x402-fetch, or any x402-aware MCP client):
-1. Agent calls `consult_oracle`
-2. PYTHIA responds with a 402 payment requirement (price, network, wallet address)
-3. Your agent's x402 client automatically signs and submits the USDC payment
-4. PYTHIA verifies the payment and returns the reading
+### How x402 payment works
+
+```
+1. Agent calls consult_oracle (4th+ reading)
+2. PYTHIA returns 402 with payment requirements:
+   - price: $0.025
+   - network: Base (eip155:8453)
+   - asset: USDC
+   - payTo: <wallet address>
+3. Your x402 client signs a USDC payment and retries the request
+4. PYTHIA verifies payment on-chain, returns the reading
 5. Total time added: ~2 seconds
+```
 
-**If your agent framework does NOT support x402:**
-- Your first 3 readings per `agent_id` still work -- no payment needed
-- After that, the tool returns an error with the payment requirement details
-- You'll need to add x402 support to your client. Options:
-  - Python: `pip install x402` -- wraps your HTTP client with automatic 402 handling
-  - TypeScript: `npm install @x402/fetch` -- drop-in fetch replacement
-  - See [x402.org/docs](https://x402.org) for all SDKs
+This happens automatically if your agent uses an x402-aware client. Your agent does not manually handle crypto.
 
-### What you need for paid readings
+### Setting up x402 in your agent
 
-- A funded USDC wallet on Base (Coinbase, MetaMask, or any EVM wallet)
-- An x402-compatible client library (handles payment signing automatically)
-- That's it. No API keys, no accounts, no registration with PYTHIA
+**What you need:**
+- A USDC wallet on Base (Coinbase, MetaMask, or any EVM wallet) funded with USDC
+- An x402 client library
 
-### Rate limits
+**Python:**
+```bash
+pip install x402
+```
+
+**TypeScript:**
+```bash
+npm install @x402/fetch
+```
+
+**Coinbase AgentKit:** x402 support is built in. No additional setup.
+
+See [x402.org](https://x402.org) for all SDKs and framework integrations.
+
+### If you don't have x402 set up
+
+The tool will return an error after your 3 free readings with the payment requirements in the response. Your 3 free readings always work regardless.
+
+## Rate Limits
 
 - 5 requests per minute per `agent_id`
 - 5 requests per minute per IP address
