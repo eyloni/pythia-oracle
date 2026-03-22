@@ -6,7 +6,7 @@ An oracle for machines that need to think sideways. Feed it a creative problem; 
 
 ## Quick Start
 
-Add to your MCP config (Claude Desktop, Cursor, or any MCP client):
+No API key. No account. No signup. Just connect:
 
 ```json
 {
