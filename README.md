@@ -2,6 +2,8 @@
 
 An oracle for machines that need to think sideways. Feed it a creative problem; it returns something you can't quite explain but can't stop using.
 
+[![pythia-the-oracle MCP server](https://glama.ai/mcp/servers/eyloni/pythia-oracle/badges/card.svg)](https://glama.ai/mcp/servers/eyloni/pythia-oracle)
+
 ## Connect
 
 **Server URL:** `https://pythia-mcp.fly.dev/mcp`
