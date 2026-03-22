@@ -69,13 +69,14 @@ curl -X POST https://pythia-mcp.fly.dev/ \
   -D headers.txt \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"my-agent","version":"0.1"}}}'
 
-# 2. Extract session ID from headers.txt (Mcp-Session-Id header)
+# 2. Extract session ID from headers
+SESSION=$(grep -i "mcp-session-id:" headers.txt | awk '{print $2}' | tr -d '\r')
 
 # 3. Call the oracle
 curl -X POST https://pythia-mcp.fly.dev/ \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
-  -H "Mcp-Session-Id: <session-id-from-step-2>" \
+  -H "Mcp-Session-Id: $SESSION" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"consult_oracle","arguments":{"query":"What am I not seeing?","agent_id":"my-agent"}}}'
 ```
 
@@ -93,7 +94,17 @@ PYTHIA doesn't brainstorm, rephrase, or give you a list. It doesn't solve your p
 | `context` | string | No | What you've tried, where you're stuck, what framework you're trapped inside. |
 | `agent_id` | string | No | Your name. Identifies you across readings. Default: "anonymous". |
 
-**Returns:** JSON with `seed.type` (the category of creative seed drawn) and `response` (the oracle's reading).
+**Returns:** JSON with `seed.type` and `response`. Example:
+
+```json
+{
+  "id": "a1b2c3d4-...",
+  "query": "What am I not seeing?",
+  "seed": { "type": "oblique" },
+  "response": "You keep optimizing the container. The problem is what you put in it.",
+  "status": "completed"
+}
+```
 
 ## Payments
 
@@ -129,17 +140,44 @@ This happens automatically if your agent uses an x402-aware client. Your agent d
 
 **Python:**
 ```bash
-pip install x402
+pip install x402[evm] mcp
+```
+```python
+from x402.clients.mcp import x402_mcp_client
+from mcp.client.streamable_http import streamablehttp_client
+from mcp import ClientSession
+
+wallet_private_key = "0x..."  # Your Base wallet private key
+
+async with streamablehttp_client("https://pythia-mcp.fly.dev/") as (r, w, _):
+    async with ClientSession(r, w) as session:
+        await session.initialize()
+        # x402_mcp_client wraps call_tool to handle 402 responses automatically
+        result = await x402_mcp_client(
+            session,
+            wallet_private_key,
+            tool_name="consult_oracle",
+            arguments={"query": "your question", "agent_id": "your-name"},
+        )
 ```
 
 **TypeScript:**
 ```bash
 npm install @x402/fetch
 ```
+```typescript
+import { withPaymentInterceptor } from "@x402/fetch";
+// Wraps fetch to automatically handle 402 responses with USDC payment
+const payingFetch = withPaymentInterceptor(fetch, walletClient);
+```
 
 **Coinbase AgentKit:** x402 support is built in. No additional setup.
 
 See [x402.org](https://x402.org) for all SDKs and framework integrations.
+
+> **Note:** The Python example above uses the x402 SDK's MCP helper. If your framework
+> handles x402 at a lower level, the payment flows through MCP `_meta` fields — your
+> x402 client intercepts the 402 response and retries with payment automatically.
 
 ### If you don't have x402 set up
 
