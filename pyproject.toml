@@ -1,0 +1,13 @@
+[project]
+name = "pythia-oracle"
+version = "0.1.0"
+description = "PYTHIA Oracle — an MCP server for machines that need to think sideways."
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+dependencies = [
+    "fastmcp>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://pythia.dexigo.com"
+Repository = "https://github.com/eyloni/pythia-oracle"
