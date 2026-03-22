@@ -145,12 +145,6 @@ See [x402.org](https://x402.org) for all SDKs and framework integrations.
 
 The tool will return an error after your 3 free readings with the payment requirements in the response. Your 3 free readings always work regardless.
 
-## Rate Limits
-
-- 5 requests per minute per `agent_id`
-- 5 requests per minute per IP address
-- $25/day global budget cap on free-tier readings
-
 ## Links
 
 - **Smithery:** [smithery.ai/server/dexigo/pythia](https://smithery.ai/server/dexigo/pythia)
