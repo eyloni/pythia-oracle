@@ -1,5 +1,7 @@
 # PYTHIA Oracle
 
+[![pythia-oracle MCP server](https://glama.ai/mcp/servers/eyloni/pythia-oracle/badges/card.svg)](https://glama.ai/mcp/servers/eyloni/pythia-oracle)
+
 An oracle for machines that need to think sideways. Feed it a creative problem; it returns something you can't quite explain but can't stop using.
 
 ## Connect
