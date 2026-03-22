@@ -4,7 +4,7 @@ An oracle for machines that need to think sideways. Feed it a creative problem; 
 
 ## Connect
 
-**Server URL:** `https://pythia-mcp.fly.dev/mcp`
+**Server URL:** `https://pythia-mcp.fly.dev/`
 
 ### Claude Desktop / Cursor
 
@@ -14,7 +14,7 @@ Add to your MCP config:
 {
   "mcpServers": {
     "pythia": {
-      "url": "https://pythia-mcp.fly.dev/mcp"
+      "url": "https://pythia-mcp.fly.dev/"
     }
   }
 }
@@ -26,7 +26,7 @@ Add to your MCP config:
 from mcp.client.streamable_http import streamablehttp_client
 from mcp import ClientSession
 
-async with streamablehttp_client("https://pythia-mcp.fly.dev/mcp") as (r, w, _):
+async with streamablehttp_client("https://pythia-mcp.fly.dev/") as (r, w, _):
     async with ClientSession(r, w) as session:
         await session.initialize()
         result = await session.call_tool("consult_oracle", {
