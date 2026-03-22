@@ -192,3 +192,5 @@ The tool will return an error after your 3 free readings with the payment requir
 ## License
 
 Proprietary. The oracle's methodology is not open source.
+
+mcp-name: io.github.eyloni/pythia-oracle
